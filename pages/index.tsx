@@ -1,65 +1,111 @@
-import Head from 'next/head'
-import Image from 'next/image'
-
-import styles from '@/pages/index.module.css'
+import {Game} from "@/pages/game";
+import {useState} from "react";
+import GamesComponent from "@/pages/GamesComponent";
+import {getGameCollectionXML, getGameCollection} from "@/pages/gameCollection";
 
 export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    const [username, setUsername] = useState("");
+    const [games, setGames] = useState<Game[]>([]);
 
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+    const handleLoadGamesButtonClick = async () => {
+        try {
+            const loadedGames:Game[] = await getGameCollection(username);
+            console.log(loadedGames);
+            await postGamesToGameCollectionApi(loadedGames);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
+    const handleDisplayGamesButtonClick = async () => {
+        try {
+            const loadedGames = await getGamesFromGameCollectionApi(username);
+            setGames(loadedGames);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+    const handleXMLButtonClick = async () => {
+        try {
+            await getGameCollectionXML(username);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+    return (
+        <main>
+            <h1>Board Game Collection</h1>
 
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a href="https://vercel.com/new" className={styles.card}>
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
-    </div>
-  )
+            <div>
+                <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter username"
+                />
+                <button onClick={handleDisplayGamesButtonClick}>Display Collection</button>
+                <button onClick={handleLoadGamesButtonClick}>Sync Collection With BGG</button>
+                <button onClick={handleXMLButtonClick}>BGG XMLAPI2</button>
+            </div>
+            <div>
+                <hr/>
+                <GamesComponent games={games}/>
+            </div>
+        </main>
+    );
 }
+
+const postGamesToGameCollectionApi = async (games: Game[]) => {
+    try {
+        const response = await fetch("/api/gameCollection", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(games),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data.message); // Success message from the API
+        } else {
+            console.error("Failed to post games to the api");
+        }
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const getGamesFromGameCollectionApi = async (username: string): Promise<Game[]> => {
+    try {
+        const response = await fetch("/api/gameCollection/" + username);
+
+        if (response.ok) {
+            const jsonData = await response.json();
+
+            // Map the JSON data to an array of Game objects
+            const games = jsonData.map((gameData: any) => {
+                // Construct the Game object based on the JSON data structure
+                return {
+                    username: gameData.username,
+                    gameId: gameData.gameId,
+                    name: gameData.name,
+                    description: gameData.description,
+                    isExpansion: gameData.isExpansion,
+                    expands: gameData.expands,
+                    image: gameData.image,
+                };
+            });
+            console.log(games);
+            return games;
+        }
+    } catch (error) {
+        console.error(error);
+        throw new Error("An error occurred while fetching games");
+    }
+    console.error("Failed to get games from the API");
+    throw new Error("Failed to get games from the API");
+};
+
