@@ -1,15 +1,15 @@
 import {Game} from "@/pages/game";
 import {useState} from "react";
 import GamesComponent from "@/pages/GamesComponent";
-import {getGameCollectionXML, getGameCollection} from "@/pages/gameCollection";
+import {fetchGameCollection, getGameCollection} from "@/pages/gameCollection";
 
 export default function Home() {
     const [username, setUsername] = useState("");
     const [games, setGames] = useState<Game[]>([]);
 
-    const handleLoadGamesButtonClick = async () => {
+    const handleSyncCollectionButtonClick = async () => {
         try {
-            const loadedGames:Game[] = await getGameCollection(username);
+            const loadedGames:Game[] = await fetchGameCollection(username);
             console.log(loadedGames);
             await postGamesToGameCollectionApi(loadedGames);
         } catch (error) {
@@ -21,14 +21,6 @@ export default function Home() {
         try {
             const loadedGames = await getGamesFromGameCollectionApi(username);
             setGames(loadedGames);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleXMLButtonClick = async () => {
-        try {
-            await getGameCollectionXML(username);
         } catch (error) {
             console.error(error);
         }
@@ -46,8 +38,7 @@ export default function Home() {
                     placeholder="Enter username"
                 />
                 <button onClick={handleDisplayGamesButtonClick}>Display Collection</button>
-                <button onClick={handleLoadGamesButtonClick}>Sync Collection With BGG</button>
-                <button onClick={handleXMLButtonClick}>BGG XMLAPI2</button>
+                <button onClick={handleSyncCollectionButtonClick}>Sync Collection With BGG</button>
             </div>
             <div>
                 <hr/>

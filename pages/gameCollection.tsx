@@ -1,20 +1,7 @@
 import {Game} from "@/pages/game";
+import {parseString} from 'xml2js';
 
-export const getGameCollectionXML = async (user: string) => {
-    try {
-        const input = 'https://api.geekdo.com/xmlapi2/collection?username=ds3161';
-//         const input ='https://api.geekdo.com/xmlapi2/thing?id=224710';
-//       const input ='https://api.geekdo.com/xmlapi2/thing?id=250534';
-        console.log(`Fetching: ${input}`);
-        const response = await fetch(input);
-        let text = await response.text();
-        // let json = xml2json(text);
-        console.log(text);
 
-    } catch (error) {
-        throw new Error(`Error: ${error}`);
-    }
-};
 export const fetchGameDetails = async (gameId: number, retries = 4): Promise<any> => {
     // Implement the logic to fetch game details from the BGG JSON API
     const input = `https://bgg-json.azurewebsites.net/thing/${gameId}`;
@@ -89,3 +76,98 @@ export const getGameCollection = async (user: string): Promise<Game[]> => {
         throw new Error(`Error: ${error}`);
     }
 };
+
+
+export const fetchGameCollection = async (user: string) => {
+    try {
+        const input = 'https://api.geekdo.com/xmlapi2/collection?username=' + user;
+        console.log(`Fetching: ${input}`);
+
+        const response = await fetch(input);
+
+        if (!response.ok) {
+            throw new Error(`Error with response code ${response.status}`);
+        }
+
+        let xml = await response.text();
+        const games = await convertXmlToGames(xml);
+
+        const enrichedGames = await Promise.all(games.map(enrichGame));
+
+        console.log(enrichedGames);
+        return enrichedGames;
+    } catch (error) {
+        throw new Error(`Error: ${error}`);
+    }
+};
+
+const enrichGame = async (gameIn: Game): Promise<Game> => {
+    try {
+        const input = 'https://api.geekdo.com/xmlapi2/thing?id=' + gameIn.gameId;
+        console.log(`Fetching: ${input}`);
+
+        const response = await fetch(input);
+
+        if (!response.ok) {
+            console.error(`Error with response code ${response.status}`);
+            return gameIn;
+        }
+
+        let xml = await response.text();
+
+        const parsedXml: any = await new Promise((resolve, reject) => {
+            parseString(xml, (err, result) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(result);
+                }
+            });
+        });
+
+        const item = parsedXml.items.item[0];
+        gameIn.description =  item.description[0];
+        gameIn.isExpansion = item.$.type === 'boardgameexpansion';
+        gameIn.image = item.image[0];
+        let expandsGameId:string = '';
+        let expandsName:string = '';
+
+        if (gameIn.isExpansion) {
+            const linkElements = item.link.filter(
+                (link: any) => link.$.type === 'boardgame'
+            );
+
+            if (linkElements.length > 0) {
+                expandsGameId = linkElements[0].$.id;
+                expandsName = linkElements[0].$.value;
+            }
+        }
+
+        gameIn.expandsGameId = expandsGameId;
+        gameIn.expandsName = expandsName;
+
+        return gameIn;
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        return gameIn;
+    }
+};
+
+const convertXmlToGames = (xml: string): Promise<Game[]> => {
+    return new Promise((resolve, reject) => {
+        parseString(xml, (err, result) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const games: Game[] = result.items.item.map((item: any) => ({
+                gameId: item.$.objectid,
+                name: item.name[0]._,
+            }));
+
+            resolve(games);
+        });
+    });
+};
+
