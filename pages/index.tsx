@@ -1,7 +1,7 @@
 import {Game} from "@/pages/game";
 import {useState} from "react";
 import GamesComponent from "@/pages/GamesComponent";
-import {fetchGameCollection, getGameCollection} from "@/pages/gameCollection";
+import {fetchGameCollection} from "@/pages/gameCollection";
 
 export default function Home() {
     const [username, setUsername] = useState("");

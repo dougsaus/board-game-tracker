@@ -13,6 +13,8 @@ export const writeGameRecordsToDatabase = async (games: Game[]) => {
     try {
         const client:PoolClient = await pool.connect();
 
+        console.log(games);
+
         // Create the schema if it doesn't exist
         await client.query(`
           CREATE TABLE IF NOT EXISTS games (
@@ -56,6 +58,7 @@ export const writeGameRecordsToDatabase = async (games: Game[]) => {
                 ]
             );
         }
+        await client.query('COMMIT');
 
         client.release();
         console.log('Game records written to the database successfully.');

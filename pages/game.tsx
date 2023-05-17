@@ -4,7 +4,7 @@ export class Game {
     name: string;
     description: string;
     isExpansion: boolean;
-    expandsGameId: string;
+    expandsGameId: number;
     expandsName: string;
     image: string;
 
@@ -14,7 +14,7 @@ export class Game {
         name: string,
         description: string,
         isExpansion: boolean,
-        expandsGameId: string,
+        expandsGameId: number,
         expandsName: string,
         image: string
     ) {
