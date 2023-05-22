@@ -69,9 +69,21 @@ export const writeGameRecordsToDatabase = async (games: Game[]) => {
 
 export const loadGamesByUsername = async (username: string): Promise<Game[]> => {
     try {
-        const client:PoolClient = await pool.connect();
-        const query:string = 'SELECT * FROM games WHERE username = $1';
-        const result:QueryResult<Game> = await client.query(query, [`${username}`]);
+        const client: PoolClient = await pool.connect();
+        const query: string = `
+      SELECT 
+        gameId AS "gameId",
+        username AS "username",
+        name AS "name",
+        description AS "description",
+        isExpansion AS "isExpansion",
+        image AS "image",
+        expandsGameId AS "expandsGameId",
+        expandsName AS "expandsName"
+      FROM games
+      WHERE username = $1
+    `;
+        const result: QueryResult<Game> = await client.query(query, [username]);
         client.release();
         return result.rows;
     } catch (error) {

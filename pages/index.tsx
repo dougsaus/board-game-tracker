@@ -1,15 +1,18 @@
 import {Game} from "@/pages/game";
-import {useState} from "react";
+import React, {useState} from "react";
 import GamesComponent from "@/pages/GamesComponent";
 import {fetchGameCollection} from "@/pages/gameCollection";
 
-export default function Home() {
+const Home = () => {
     const [username, setUsername] = useState("");
     const [games, setGames] = useState<Game[]>([]);
 
+    const gameCount = games.filter(value => !value.isExpansion).length;
+    const expansionCount = games.filter(value => value.isExpansion).length;
+
     const handleSyncCollectionButtonClick = async () => {
         try {
-            const loadedGames:Game[] = await fetchGameCollection(username);
+            const loadedGames: Game[] = await fetchGameCollection(username);
             console.log(loadedGames);
             await postGamesToGameCollectionApi(loadedGames);
         } catch (error) {
@@ -18,8 +21,19 @@ export default function Home() {
     };
 
     const handleDisplayGamesButtonClick = async () => {
+
         try {
-            const loadedGames = await getGamesFromGameCollectionApi(username);
+            let loadedGames = await getGamesFromGameCollectionApi(username);
+            loadedGames.forEach(game => {
+                if (game.isExpansion) {
+                    game.expansions = [];
+                    game.baseGames = loadedGames.filter(baseGame => baseGame.gameId === game.expandsGameId);
+                } else {
+                    game.expansions = loadedGames.filter(expansion => expansion.expandsGameId === game.gameId);
+                    game.baseGames = [];
+                }
+            });
+            console.log(loadedGames);
             setGames(loadedGames);
         } catch (error) {
             console.error(error);
@@ -30,22 +44,28 @@ export default function Home() {
         <main>
             <h1>Board Game Collection</h1>
 
-            <div>
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter username"
-                />
-                <button onClick={handleDisplayGamesButtonClick}>Display Collection</button>
+            <div style={{display: 'flex', justifyContent: 'center'}}>
+                <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                       placeholder="Enter username"/>
                 <button onClick={handleSyncCollectionButtonClick}>Sync Collection With BGG</button>
-            </div>
-            <div>
+                <button onClick={handleDisplayGamesButtonClick}>Display Collection</button>
                 <hr/>
-                <GamesComponent games={games}/>
             </div>
+            {games.length > 0 &&
+                <div>
+                    <h3>Total Number of Base Games in Collection: {gameCount}</h3>
+                    <h3>Total Number of Expansions in Collection: {expansionCount}</h3>
+                </div>
+            }
+            {games.length > 0 &&
+                <div>
+                    <GamesComponent games={games}/>
+                </div>
+            }
+
         </main>
-    );
+    )
+        ;
 }
 
 const postGamesToGameCollectionApi = async (games: Game[]) => {
@@ -85,7 +105,8 @@ const getGamesFromGameCollectionApi = async (username: string): Promise<Game[]> 
                     name: gameData.name,
                     description: gameData.description,
                     isExpansion: gameData.isExpansion,
-                    expands: gameData.expands,
+                    expandsGameId: gameData.expandsGameId,
+                    expandsName: gameData.expandsName,
                     image: gameData.image,
                 };
             });
@@ -99,4 +120,6 @@ const getGamesFromGameCollectionApi = async (username: string): Promise<Game[]> 
     console.error("Failed to get games from the API");
     throw new Error("Failed to get games from the API");
 };
+
+export default Home;
 

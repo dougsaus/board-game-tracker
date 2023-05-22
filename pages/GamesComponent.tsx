@@ -1,6 +1,8 @@
 import React from 'react';
 import {Game} from '@/pages/game';
-import he from 'he';
+// import GameAccordianComponent from "@/pages/GameAccordianComponent";
+import GameComponent from "@/pages/GameComponent";
+import {Box, Grid} from "@mui/material";
 
 interface GamesComponentProps {
     games: Game[];
@@ -8,21 +10,19 @@ interface GamesComponentProps {
 
 const GamesComponent: React.FC<GamesComponentProps> = ({games}) => {
     return (
-        <div>
-            {games.map((game) => (
-                <div key={game.gameId}>
+        <div style={{maxWidth: "100%", paddingTop: "12px"}}>
+            <Grid container spacing={0} justifyContent={"center"} alignContent={"center"} border={1}>
+                {/*{games.filter(value => !value.isExpansion).map((game) => (*/}
+                {games.map((game) => (
                     <div>
-                        <img src={game.image} alt={game.name} style={{width: '100px', height: 'auto'}}/>
+                        <Grid item xs={12}>
+                            <GameComponent game={game}/>
+                        </Grid>
                     </div>
-                    <div>{game.name}</div>
-                    <div style={{maxWidth: '600px', wordWrap: 'break-word'}}>
-                        {game.description && he.decode(game.description)}
-                    </div>
-                    <hr/>
-                </div>
-            ))}
+                ))}
+            </Grid>
         </div>
     );
-};
+}
 
 export default GamesComponent;

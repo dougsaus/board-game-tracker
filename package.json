@@ -8,6 +8,10 @@
     "test:ci": "jest --ci"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.11.16",
+    "@mui/material": "^5.13.1",
     "he": "^1.2.0",
     "next": "latest",
     "node-fetch": "^3.3.1",

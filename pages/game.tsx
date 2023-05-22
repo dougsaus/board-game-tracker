@@ -7,6 +7,8 @@ export class Game {
     expandsGameId: number;
     expandsName: string;
     image: string;
+    expansions: Game[];
+    baseGames: Game[];
 
     constructor(
         username: string,
@@ -26,6 +28,8 @@ export class Game {
         this.expandsGameId = expandsGameId;
         this.expandsName = expandsName;
         this.image = image;
+        this.expansions = [];
+        this.baseGames = [];
     }
 
     toString(): string {
